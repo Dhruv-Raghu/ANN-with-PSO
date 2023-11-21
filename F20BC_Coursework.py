@@ -16,10 +16,13 @@ class Activation:
                 return 1 / (1 + np.exp(-x))
             else:
                 return np.exp(x) / (1 + np.exp(x))
+            
         elif self.activation_type == 'ReLU':
             return np.maximum(0, x)
+        
         elif self.activation_type == 'leakyReLU':
             return np.where(x > 0, x, 0.01 * x)
+        
         elif self.activation_type == 'tanh':
             return np.tanh(x)
        
@@ -120,14 +123,13 @@ class NeuralNetwork:
 
 
 class PSO:
-    def __init__(self, num_particles, max_iter, inertia_param, cognitive_param, social_param, global_param):
+    def __init__(self, num_particles, max_iter, inertia_param, cognitive_param, social_param):
         self.num_particles = num_particles
         self.particles = []
         self.max_iter = max_iter
         self.alpha = inertia_param      # determines how much of the particle's current velocity should be retained
         self.beta = cognitive_param     # determines how much of the particle's best position should be retained
         self.gamma = social_param       # determines how much of the informants's best position should be retained
-        self.delta = global_param       # determines how much of the swarm's best position should be retained
 
     def optimize(self, network):
         self.createParticles(network)
@@ -143,27 +145,23 @@ class PSO:
             for particle in self.particles:
 
                 # dynamically change inertia, cognitive, social, and global parameters with iteration
-                if x > 0.25 * self.max_iter:
-                    self.alpha = max(0.8, self.alpha - 0.1)  # Reduce exploration
-                    self.beta = max(0.8, self.beta - 0.1)
-                    self.gamma = max(0.6, self.gamma - 0.1)
-                    self.delta = min(0.6, self.delta + 0.1)  # Increase exploitation
-                elif x > 0.5 * self.max_iter:
-                    self.alpha = max(0.5, self.alpha - 0.1)
-                    self.beta = max(0.6, self.beta - 0.1)
-                    self.gamma = max(0.4, self.gamma - 0.1)
-                    self.delta = min(1.2, self.delta + 0.1)
-                elif x > 0.75 * self.max_iter:
-                    self.alpha = max(0.4, self.alpha - 0.1)
-                    self.beta = max(0.4, self.beta - 0.1)
-                    self.gamma = max(0.2, self.gamma - 0.1)
-                    self.delta = min(1.5, self.delta + 0.1)
+                # if x > 0.25 * self.max_iter:
+                #     self.alpha = max(0.8, self.alpha - 0.1)  # Reduce exploration
+                #     self.beta = max(0.8, self.beta - 0.1)
+                #     self.gamma = min(0.6, self.gamma + 0.1)
+                # elif x > 0.5 * self.max_iter:
+                #     self.alpha = max(0.5, self.alpha - 0.1)
+                #     self.beta = max(0.6, self.beta - 0.1)
+                #     self.gamma = min(1.2, self.gamma + 0.1)
+                # elif x > 0.75 * self.max_iter:
+                #     self.alpha = max(0.4, self.alpha - 0.1)
+                #     self.beta = max(0.4, self.beta - 0.1)
+                #     self.gamma = min(1.5, self.gamma + 0.1)
 
 
-                
                 if x > 0:
                     self.updateInformantBest(particle)
-                    particle.updateVelocity(self.alpha, self.beta, self.gamma, self.delta, global_best)
+                    particle.updateVelocity(self.alpha, self.beta, self.gamma)
                     particle.updatePosition()
                 particle.evaluateFitness()
 
@@ -180,7 +178,7 @@ class PSO:
         for x in range(self.num_particles):
             self.particles.append(Particle(randomizeNetwork(network)))
 
-    def findNeighbours(self, particle, k=3):
+    def findNeighbours(self, particle, k=5):
         distances = [np.linalg.norm(particle.position.get_params() - other.position.get_params()) for other in self.particles if other != particle]
         indices = np.argsort(distances)[:k]
         neighbours = [self.particles[i] for i in indices]
@@ -198,9 +196,9 @@ class Particle:
         self.position = copy.deepcopy(network)
         self.best_position = network
         self.informant_best = None
-        self.informant_best_fitness = 0
         self.fitness = 0
         self.best_fitness = 0
+        self.informant_best_fitness = 0
         self.velocities = []
         self.initializeVelocity()
         self.bound = bound
@@ -213,17 +211,15 @@ class Particle:
             bias_velocity = np.random.randn(*layer.bias.shape) * 0.01
             self.velocities.append((weights_velocity, bias_velocity))
 
-    def updateVelocity(self, alpha, beta, gamma, delta, g_best):
+    def updateVelocity(self, alpha, beta, gamma):
         # alpha -> inertia_param      # determines how much of the particle's current velocity should be retained
         # beta -> cognitive_param     # determines how much of the particle's best position should be retained
         # gamma -> social_param       # determines how much of the informants's best position should be retained
-        # delta -> global_param       # determines how much of the swarm's best position should be retained
-        # g_best -> best performing network in the swarm
 
         # Update velocities element-wise
         for i, (weights_vel, bias_vel) in enumerate(self.velocities):
-            weights_update = alpha * weights_vel + beta * np.random.uniform(0, 1) * (self.best_position.layers[i].weights - self.position.layers[i].weights) + gamma * np.random.uniform(0,1) * (self.informant_best.position.layers[i].weights - self.position.layers[i].weights) + delta * np.random.uniform(0, 1) * (g_best.layers[i].weights - self.position.layers[i].weights)
-            bias_update = alpha * bias_vel + beta * np.random.uniform(0, 1) * (self.best_position.layers[i].bias - self.position.layers[i].bias) + gamma * np.random.uniform(0,1) * (self.best_position.layers[i].bias - self.informant_best.position.layers[i].bias) + delta * np.random.uniform(0, 1) * (g_best.layers[i].bias - self.position.layers[i].bias)
+            weights_update = alpha * weights_vel + beta * np.random.uniform(0, 1) * (self.best_position.layers[i].weights - self.position.layers[i].weights) + gamma * np.random.uniform(0,1) * (self.informant_best.position.layers[i].weights - self.position.layers[i].weights)
+            bias_update = alpha * bias_vel + beta * np.random.uniform(0, 1) * (self.best_position.layers[i].bias - self.position.layers[i].bias) + gamma * np.random.uniform(0,1) * (self.best_position.layers[i].bias - self.informant_best.position.layers[i].bias)
 
             # Update velocities
             self.velocities[i] = (weights_update, bias_update)
@@ -340,7 +336,7 @@ def main_PSO_Test():
         network.fit(X_train, y_train)
         network.createLayer(8, Activation('ReLU'))
         # network.createLayer(20, Activation('leakyReLU'))
-        network.createLayer(8, Activation('ReLU'))
+        # network.createLayer(8, Activation('ReLU'))
         network.createLayer(3, Activation('logistic'))
 
         # Initialize PSO with test parameters
@@ -348,8 +344,7 @@ def main_PSO_Test():
         max_iter = 100
         inertia_param = 1.0
         cognitive_param = 1.2
-        social_param = 1.2
-        global_param = 1.5
+        social_param = 0.5
 
         pso = PSO(
             num_particles=num_particles,
@@ -357,7 +352,6 @@ def main_PSO_Test():
             inertia_param=inertia_param,
             cognitive_param=cognitive_param,
             social_param=social_param,
-            global_param=global_param
         )
 
         # Optimize the neural network using PSO
