@@ -3,6 +3,9 @@ import pandas as pd
 import copy
 from sklearn.model_selection import train_test_split
 from sklearn.datasets import load_iris
+import matplotlib.pyplot as plt
+
+from sklearn.metrics import classification_report, confusion_matrix
 
 # np.random.seed(1911)
 
@@ -142,7 +145,7 @@ class NeuralNetwork:
         return np.array(predictions)
     
     # trains the network using PSO
-    def train_with_PSO(self, num_particles, num_iterations, inertia, c1, c2, num_informants=6, dynamicParams=False):
+    def train_with_PSO(self, num_particles, num_iterations, inertia, c1, c2, c3, num_informants=6, dynamicParams=False):
         # Initialize PSO with test parameters
         pso = PSO(
             num_particles=num_particles,
@@ -150,6 +153,7 @@ class NeuralNetwork:
             inertia=inertia,
             c1=c1,  # cognitive_param
             c2=c2,  # social_param
+            c3=c3,  # global_param
             num_informants=num_informants
         )
 
@@ -165,56 +169,101 @@ class NeuralNetwork:
 
 # The PSO object optimizes the neural network by updating the weights and bias in each layer
 class PSO:
-    def __init__(self, num_particles, max_iter, inertia, c1, c2, num_informants=5):
+    def __init__(self, num_particles, max_iter, inertia, c1, c2, c3, num_informants=5):
         self.num_particles = num_particles
         self.particles = []
         self.max_iter = max_iter
         self.alpha = inertia      # determines how much of the particle's current velocity should be retained
         self.beta = c1     # determines how much of the particle's best position should be retained
         self.gamma = c2       # determines how much of the informants's best position should be used
+        self.delta = c3     # determines how much of the global best position should be used
         self.num_informants = num_informants
 
-    def optimize(self, network, dynamicParams=False):
+        self.pso_best_fitness = 0
+        self.pso_best_network = None
+
+    def optimize(self, network, dynamicParams=False, showFitnessUpdate = False):
         self.createParticles(network)
 
-        best_particleFitness = 0
-        best_network = None
+        global_best_network = None
+        global_best_fitness = 0
+
+        if showFitnessUpdate:
+            best_fitness_list = []
+
+        print("Optimizing the network...")
 
         for x in range(self.max_iter):
-            print("Iteration: ", x)
-            print("Best fitness: ", best_particleFitness)
+            # print("Iteration: ", x)
+            # print("Best fitness: ", global_best_fitness)
+
+            if x == 25:
+                print("25% complete")
+            elif x == 50:
+                print("50% complete")
+            elif x == 75:
+                print("75% complete")
 
             for particle in self.particles:
 
                 if dynamicParams:
-                    # dynamically change inertia, cognitive, social, and global parameters with iteration
-                    if x > 0.25 * self.max_iter:
-                        self.alpha = max(0.8, self.alpha - 0.1)  # Reduce exploration
-                        self.beta = max(0.8, self.beta - 0.1)
-                        self.gamma = min(0.6, self.gamma + 0.1)
-                    elif x > 0.5 * self.max_iter:
-                        self.alpha = max(0.5, self.alpha - 0.1)
-                        self.beta = max(0.6, self.beta - 0.1)
-                        self.gamma = min(1.2, self.gamma + 0.1)
+                    if x <= 0.25 * self.max_iter:   # first quarter of iterations
+                        # focus on exploring the search space
+                        self.alpha = 0.9
+                        self.beta = 2.0
+                        self.gamma = 0.9
+                        # self.num_informants = 3
+                    elif x > 0.25 * self.max_iter and x <= 0.5 * self.max_iter:
+                        # balance exploration and exploitation
+                        self.alpha = min(0.8, self.alpha - 0.1)
+                        self.beta = min(1.5, self.beta - 0.1)
+                        self.gamma = max(1.2, self.gamma + 0.1)
+                        # self.num_informants = 4
+                    elif x > 0.5 * self.max_iter and x <= 0.75 * self.max_iter:
+                        # focus on exploiting the search space
+                        self.alpha = min(0.7, self.alpha - 0.1)
+                        self.beta = min(1.2, self.beta - 0.1)
+                        self.gamma = max(1.5, self.gamma + 0.1)
+                        # self.num_informants = 6
                     elif x > 0.75 * self.max_iter:
-                        self.alpha = max(0.4, self.alpha - 0.1)
-                        self.beta = max(0.4, self.beta - 0.1)
-                        self.gamma = min(1.5, self.gamma + 0.1)
+                        # focus on exploiting the search space
+                        self.alpha = min(0.4, self.alpha - 0.1)
+                        self.beta = min(0.9, self.beta - 0.1)
+                        self.gamma = max(2.0, self.gamma + 0.1)
+                        # self.num_informants = 10
 
 
                 if x > 0:
                     self.updateInformantBest(particle)
-                    particle.updateVelocity(self.alpha, self.beta, self.gamma)
+                    particle.updateVelocity(self.alpha, self.beta, self.gamma, self.delta)
                     particle.updatePosition()
                 particle.evaluateFitness()
 
-                if particle.fitness > best_particleFitness:
-                    best_particleFitness = copy.deepcopy(particle.fitness)
-                    best_network = copy.deepcopy(particle.position)
+                if particle.fitness > global_best_fitness:
+                    # global_best = copy.deepcopy(particle)
+                    global_best_network = copy.deepcopy(particle.position)
+                    global_best_fitness = copy.deepcopy(particle.fitness)
+                    
+                if showFitnessUpdate:
+                    best_fitness_list.append([x, global_best_fitness])
 
-            global_best = best_network
+                particle.global_best_network = global_best_network
+                particle.global_best_fitness = global_best_fitness
 
-        optimized_network = best_network
+        if showFitnessUpdate:
+            plt.title("PSO Global Best Fitness over time")
+            plt.xlabel("Iteration")
+            plt.ylabel("Global Best Fitness")
+
+            # plot iteration on x-axis and fitness on y-axis
+            best_fitness_list = np.array(best_fitness_list)
+            plt.plot(best_fitness_list[:, 0], best_fitness_list[:, 1])
+
+            plt.show()
+
+        print("Optimization complete!")
+        print("Best fitness: ", global_best_fitness)
+        optimized_network = global_best_network
         return optimized_network
 
     def createParticles(self, network):
@@ -244,16 +293,36 @@ class PSO:
 
         return neighbours
     
+    # find k closest neighbours to the particle based on fitness
+    def findNeighbours_fitness(self, particle):
+        k = self.num_informants
+
+        # Calculate Euclidean distances between the particle and all other particles
+        distances = []
+        for other_particle in self.particles:
+            if other_particle != particle:
+                distance = np.linalg.norm(particle.fitness - other_particle.fitness)
+                distances.append(distance)
+
+        # Get indices of k closest neighbors
+        closest_indices = np.argsort(distances)[:k]
+
+        # Retrieve the k closest neighbors
+        neighbours = [self.particles[i] for i in closest_indices]
+
+        return neighbours
+    
     def updateInformantBest(self, particle):
-        neighbours = self.findNeighbours(particle)  # Find neighbours of the particle using numInformants
+        neighbours = self.findNeighbours_fitness(particle)  # Find neighbours of the particle using numInformants
     
         best_neighbour = max(neighbours, key=lambda x: x.fitness) # Find the neighbour with the best fitness
 
         # update the particle's informant best if the neighbour has a better fitness
         if best_neighbour.fitness > particle.informant_best_fitness:
-            particle.informant_best = copy.deepcopy(best_neighbour)
+            particle.informant_best_network = copy.deepcopy(best_neighbour.position)
             particle.informant_best_fitness = copy.deepcopy(best_neighbour.fitness)
-    
+
+
 # The particle object of a PSO algorithm
 # the position of the particle is a neural network object with the weights and bias of each layer
 # the weights and bias of the particle are updated by the PSO algorithm
@@ -261,10 +330,12 @@ class Particle:
     def __init__(self, network, bound=5.0):
         self.position = copy.deepcopy(network)
         self.best_position = network
-        self.informant_best = None
-        self.fitness = 0
+        self.informant_best_network = network
+        self.global_best_network = network
+        self.fitness = 1e-6
         self.best_fitness = 0
         self.informant_best_fitness = 0
+        self.global_best_fitness = 0
         self.velocities = []
         self.initializeVelocity()
         self.bound = bound
@@ -280,15 +351,15 @@ class Particle:
             bias_velocity = np.random.randn(*layer.bias.shape) * 0.01
             self.velocities.append((weights_velocity, bias_velocity))
 
-    def updateVelocity(self, alpha, beta, gamma):
+    def updateVelocity(self, alpha, beta, gamma, delta):
         # alpha -> inertia_param      # determines how much of the particle's current velocity should be retained
         # beta -> cognitive_param     # determines how much of the particle's best position should be retained
         # gamma -> social_param       # determines how much of the informants's best position should be retained
 
         # Update velocities element-wise
         for i, (weights_vel, bias_vel) in enumerate(self.velocities):
-            weights_update = alpha * weights_vel + beta * np.random.uniform(0, 1) * (self.best_position.layers[i].weights - self.position.layers[i].weights) + gamma * np.random.uniform(0,1) * (self.informant_best.position.layers[i].weights - self.position.layers[i].weights)
-            bias_update = alpha * bias_vel + beta * np.random.uniform(0, 1) * (self.best_position.layers[i].bias - self.position.layers[i].bias) + gamma * np.random.uniform(0,1) * (self.best_position.layers[i].bias - self.informant_best.position.layers[i].bias)
+            weights_update = alpha * weights_vel + beta * np.random.uniform(0, 1) * (self.best_position.layers[i].weights - self.position.layers[i].weights) + gamma * np.random.uniform(0,1) * (self.informant_best_network.layers[i].weights - self.position.layers[i].weights) + delta * np.random.uniform(0,1) * (self.global_best_network.layers[i].weights - self.position.layers[i].weights)
+            bias_update = alpha * bias_vel + beta * np.random.uniform(0, 1) * (self.best_position.layers[i].bias - self.position.layers[i].bias) + gamma * np.random.uniform(0,1) * (self.informant_best_network.layers[i].bias - self.position.layers[i].bias) + delta * np.random.uniform(0,1) * (self.global_best_network.layers[i].bias - self.position.layers[i].bias)
 
             # Update velocities
             self.velocities[i] = (weights_update, bias_update)
@@ -297,22 +368,21 @@ class Particle:
         for i, layer in enumerate(self.position.layers):
             # Update weights 
             layer.weights = layer.weights + self.velocities[i][0]
-            # and apply reflective bounding
-            layer.weights = self.reflectiveBound(layer.weights, -self.bound, self.bound)  
+            layer.weights = self.reflectiveBound(layer.weights, -self.bound, self.bound)
 
             # Update biases 
             layer.bias = layer.bias + self.velocities[i][1]
-            # and apply reflective bounding
-            layer.bias = self.reflectiveBound(layer.bias, -self.bound, self.bound)  
+            layer.bias = self.reflectiveBound(layer.bias, -self.bound, self.bound)
 
             layer.updateWeights()   # update the neurons with the new weights
     
-    def reflectiveBound(self, value, lower_bound, upper_bound):
+    def reflectiveBound(self, values, lower_bound, upper_bound):
         # Reflective bounding for an array of values
-        for i in range(len(value)):
-            value[i] = np.where(value[i] < lower_bound, 2 * lower_bound - value[i], value[i])
-            value[i] = np.where(value[i] > upper_bound, 2 * upper_bound - value[i], value[i])
-        return value
+        for i in range(len(values)):
+            values[i] = np.where(values[i] < lower_bound, 2 * lower_bound - values[i], values[i])
+            values[i] = np.where(values[i] > upper_bound, 2 * upper_bound - values[i], values[i])
+        return values
+    
             
     # evaluate the fitness of the particle by running the train data through the network and comparing the output to the labels
     def evaluateFitness(self):
@@ -381,7 +451,7 @@ def main_ANN_Test():
     # print(network.get_params())
 
 def main_PSO_Test():
-    # # Load data and split into training and testing sets
+    # Load data and split into training and testing sets
     # data_csv = pd.read_csv('/Users/dhruv/Documents/Y4S1/F20BC/Coursework/data.csv')
     # X = data_csv.iloc[:, :-1].to_numpy()
     # y = data_csv.iloc[:, -1].to_numpy()
@@ -393,28 +463,25 @@ def main_PSO_Test():
     iris_y = iris.target
     print(np.unique(iris_y)) # [0 1 2]
 
-    # from sklearn.preprocessing import StandardScaler
-    # scaler = StandardScaler()
-    # iris_X = scaler.fit_transform(iris_X)
-
     X_train, X_test, y_train, y_test = train_test_split(iris_X, iris_y, test_size=0.3)
 
-    # take an average of 15 runs
+    # take an average of 10 runs
     accuracyList = []
-    for i in range(15):
+    for i in range(10):
         # Create a neural network
-        network = NeuralNetwork(numHiddenLayers=1, numNeurons=[8], activation=['ReLU'])
+        network = NeuralNetwork(numHiddenLayers=1, numNeurons=[5], activation=['ReLU'])
         network.fit(X_train, y_train)
 
         # Initialize PSO with test parameters
         num_particles = 30
         max_iter = 100
-        inertia_param = 1.0
+        inertia_param = 0.5
         cognitive_param = 1.0
-        social_param = 1.0
+        social_param = 1.2
+        global_param = 2.0
 
         # Optimize the neural network using PSO
-        network.train_with_PSO(num_particles, max_iter, inertia_param, cognitive_param, social_param, num_informants=6)
+        network.train_with_PSO(num_particles, max_iter, inertia_param, cognitive_param, social_param, global_param, num_informants=4)
 
         # Evaluate the performance of the optimized network on test data
         predictions = network.predict(X_test)
@@ -423,7 +490,27 @@ def main_PSO_Test():
         accuracyList.append(accuracy)
     
     print("Average accuracy: ", np.mean(accuracyList))
-       
+    
+    # plot the accuracy of each run
+    plt.plot(accuracyList)
+
+def main_plot():
+    # test on iris dataset
+    iris = load_iris()
+    iris_X = iris.data
+    iris_y = iris.target
+    print(np.unique(iris_y)) # [0 1 2]
+
+    X_train, X_test, y_train, y_test = train_test_split(iris_X, iris_y, test_size=0.3)
+
+    # Create a neural network
+    network = NeuralNetwork(numHiddenLayers=1, numNeurons=[5], activation=['ReLU'])
+    network.fit(X_train, y_train)
+    
+    pso = PSO(num_particles=30, max_iter=100, inertia=0.5, c1=1.0, c2=1.2, c3=2.0, num_informants=4)
+    pso.createParticles(network)
+
+    pso.optimize(network, showFitnessUpdate=True)
 
 def main_MLP_Test():
     from sklearn.neural_network import MLPClassifier
@@ -487,10 +574,98 @@ def visualizeIrisData():
     plt.scatter(iris_X[:, 0], iris_X[:, 1], c=iris_y)
     plt.show()
 
+def main():
+    print("Which dataset do you want to use?")
+    print("Options: [1] coursework, [2] iris")
+    dataset = int(input())
+    while(dataset not in [1, 2]):
+        print("Invalid dataset. Please try again.")
+        print("Options: [1] coursework, [2] iris")
+        dataset = int(input())
+
+    if dataset == 1:
+        data_csv = pd.read_csv('data.csv')
+        X = data_csv.iloc[:, :-1].to_numpy()
+        y = data_csv.iloc[:, -1].to_numpy()
+    elif dataset == 2:
+        iris = load_iris()
+        X = iris.data
+        y = iris.target
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
+
+    print("Creating a neural network...")
+
+    print("How many hidden layers do you want in your network?")
+    num_layers = int(input())
+
+    neurons_per_layer = []
+    activation_functions = []
+    for i in range(num_layers):
+        print("How many neurons do you want in hidden layer ", i+1, "?")
+        num_neurons = int(input())
+        print("What activation function do you want in layer ", i+1, "?")
+        print("Options: [1] logistic, [2] ReLU, [3] leakyReLU, [4] tanh")
+        activation = int(input())
+        while(activation not in [1, 2, 3, 4]):
+            print("Invalid activation function. Please try again.")
+            print("Options: [1] logistic, [2] ReLU, [3] leakyReLU, [4] tanh")
+            activation = int(input())
+        
+        if activation == 1:
+            activation = 'logistic'
+        elif activation == 2:
+            activation = 'ReLU'
+        elif activation == 3:
+            activation = 'leakyReLU'
+        elif activation == 4:
+            activation = 'tanh'
+
+        neurons_per_layer.append(num_neurons)
+        activation_functions.append(activation)
+
+    print("Creating a neural network with ", num_layers, " layers, ", neurons_per_layer, " neurons per layer, and ", activation_functions, " activation functions...")
+    network = NeuralNetwork(num_layers, neurons_per_layer, activation_functions)
+    network.fit(X_train, y_train)
+
+    print("How many particles do you want in your PSO algorithm?")
+    num_particles = int(input())
+    print("How many iterations do you want in your PSO algorithm?")
+    num_iterations = int(input())
+    print("What inertia parameter do you want in your PSO algorithm?")
+    inertia = float(input())
+    print("What cognitive parameter do you want in your PSO algorithm?")
+    cognitive = float(input())
+    print("What social parameter do you want in your PSO algorithm?")
+    social = float(input())
+    print("What global parameter do you want in your PSO algorithm?")
+    global_param = float(input())
+    print("How many informants should each particle have?")
+    num_informants = int(input())
+
+    print("Training the network with PSO...")
+    network.train_with_PSO(num_particles, num_iterations, inertia, cognitive, social, global_param, num_informants=num_informants)
+    print("Training complete!")
+
+    print("Evaluating the performance of the network on the test data...")
+    y_pred = network.predict(X_test)
+    accuracy = get_accuracy(y_test, y_pred)
+
+    # Metrics
+    print("Confusion Matrix: ")
+    print(confusion_matrix(y_test, y_pred))
+    print("Classification Report: ")
+    print(classification_report(y_test, y_pred))
+
+
+
+    
 
 if __name__ == "__main__":
     # visualizeCourseworkData()
     # visualizeIrisData()
     # main_ANN_Test()
-    main_PSO_Test()
+    # main_PSO_Test()
+    # main_plot()
     # main_MLP_Test()
+    main()
