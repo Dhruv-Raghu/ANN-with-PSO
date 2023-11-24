@@ -52,7 +52,7 @@ class Neuron:
 class Layer:
     def __init__(self, num_neurons, num_inputs, activation):
         self.num_neurons = num_neurons
-        self.weights = np.random.randn(num_neurons, num_inputs) * np.sqrt(2 / (num_inputs + num_neurons))   # randomize initial weights
+        self.weights = np.random.randn(num_neurons, num_inputs) * np.sqrt(2 / (num_inputs + num_neurons))   # intialize weights using He initialization
         self.bias = np.random.randn(num_neurons, 1)     # randomize initial bias
         self.activation = activation
         self.layer = self.createLayer()
@@ -428,157 +428,142 @@ def randomizeNetwork(network):
         network.layers[x].updateWeights()
 
     return network
+
+# IGNORE
+# different main methods used for testing along the way
     
-def main_ANN_Test():
-    # 2 rows of data to test forward function
-    X_trial = np.array([[3.6216,8.6661,-2.8073,-0.44699], [-1.3971,3.3191,-1.3927,-1.9948]])
-    y_trial = np.array([0, 1])
-    # print(input_data.shape)
+# def main_ANN_Test():
+#     # 2 rows of data to test forward function
+#     X_trial = np.array([[3.6216,8.6661,-2.8073,-0.44699], [-1.3971,3.3191,-1.3927,-1.9948]])
+#     y_trial = np.array([0, 1])
+#     # print(input_data.shape)
 
-    # binary classification dataset
-    data_csv = pd.read_csv('/Users/dhruv/Documents/Y4S1/F20BC/Coursework/data.csv')
-    X = data_csv.iloc[:, :-1].to_numpy()
-    y = data_csv.iloc[:, -1].to_numpy()
+#     # binary classification dataset
+#     data_csv = pd.read_csv('/Users/dhruv/Documents/Y4S1/F20BC/Coursework/data.csv')
+#     X = data_csv.iloc[:, :-1].to_numpy()
+#     y = data_csv.iloc[:, -1].to_numpy()
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+#     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
-    # Create network
-    network = NeuralNetwork()
-    network.fit(X_trial, y_trial)
-    network.createLayer(3, Activation('ReLU'))
-    # network.createLayer(2, Activation('logistic'))
+#     # Create network
+#     network = NeuralNetwork()
+#     network.fit(X_trial, y_trial)
+#     network.createLayer(3, Activation('ReLU'))
+#     # network.createLayer(2, Activation('logistic'))
 
-    # test forward function
-    # forward_test = network.forward(X_trial[1])
-    # print(forward_test)
-    # predict_test = network.predict(X_trial)
-    # print(predict_test)
+#     # test forward function
+#     # forward_test = network.forward(X_trial[1])
+#     # print(forward_test)
+#     # predict_test = network.predict(X_trial)
+#     # print(predict_test)
 
-    network2 = NeuralNetwork()
-    network2.fit(X_train, y_train)
-    network2.createLayer(3, Activation('ReLU'))
-    network2.createLayer(2, Activation('logistic'))
+#     network2 = NeuralNetwork()
+#     network2.fit(X_train, y_train)
+#     network2.createLayer(3, Activation('ReLU'))
+#     network2.createLayer(2, Activation('logistic'))
 
-    # # test forward function
-    # forward_test = network.forward(X_trial[1])
-    # print(forward_test)
-    predict_test = network2.predict(X_test)
-    print(predict_test)
-    print(get_accuracy(y_test, predict_test))
+#     # # test forward function
+#     # forward_test = network.forward(X_trial[1])
+#     # print(forward_test)
+#     predict_test = network2.predict(X_test)
+#     print(predict_test)
+#     print(get_accuracy(y_test, predict_test))
 
-    network2 = randomizeNetwork(network2)
-    predict_test = network2.predict(X_test)
-    print(predict_test)
-    print(get_accuracy(y_test, predict_test))
+#     network2 = randomizeNetwork(network2)
+#     predict_test = network2.predict(X_test)
+#     print(predict_test)
+#     print(get_accuracy(y_test, predict_test))
 
-    # print(network.get_params())
+#     # print(network.get_params())
 
-def main_PSO_Test():
-    # Load data and split into training and testing sets
-    # data_csv = pd.read_csv('/Users/dhruv/Documents/Y4S1/F20BC/Coursework/data.csv')
-    # X = data_csv.iloc[:, :-1].to_numpy()
-    # y = data_csv.iloc[:, -1].to_numpy()
-    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+# def main_PSO_Test():
+#     # Load data and split into training and testing sets
+#     # data_csv = pd.read_csv('/Users/dhruv/Documents/Y4S1/F20BC/Coursework/data.csv')
+#     # X = data_csv.iloc[:, :-1].to_numpy()
+#     # y = data_csv.iloc[:, -1].to_numpy()
+#     # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
-    # test on iris dataset
-    iris = load_iris()
-    iris_X = iris.data
-    iris_y = iris.target
-    print(np.unique(iris_y)) # [0 1 2]
+#     # test on iris dataset
+#     iris = load_iris()
+#     iris_X = iris.data
+#     iris_y = iris.target
+#     print(np.unique(iris_y)) # [0 1 2]
 
-    X_train, X_test, y_train, y_test = train_test_split(iris_X, iris_y, test_size=0.3)
+#     X_train, X_test, y_train, y_test = train_test_split(iris_X, iris_y, test_size=0.3)
 
-    # take an average of 20 runs
-    accuracyList = []
-    for i in range(20):
-        # Create a neural network
-        network = NeuralNetwork(numHiddenLayers=1, numNeurons=[5], activation=['ReLU'])
-        network.fit(X_train, y_train)
+#     # take an average of 20 runs
+#     accuracyList = []
+#     for i in range(20):
+#         # Create a neural network
+#         network = NeuralNetwork(numHiddenLayers=1, numNeurons=[5], activation=['ReLU'])
+#         network.fit(X_train, y_train)
 
-        # Initialize PSO with test parameters
-        num_particles = 30
-        max_iter = 100
-        inertia_param = 0.5
-        cognitive_param = 1.0
-        social_param = 1.2
-        global_param = 2.0
+#         # Initialize PSO with test parameters
+#         num_particles = 30
+#         max_iter = 100
+#         inertia_param = 0.5
+#         cognitive_param = 1.0
+#         social_param = 1.2
+#         global_param = 2.0
 
-        # Optimize the neural network using PSO
-        network.train_with_PSO(num_particles, max_iter, inertia_param, cognitive_param, social_param, global_param, num_informants=4)
+#         # Optimize the neural network using PSO
+#         network.train_with_PSO(num_particles, max_iter, inertia_param, cognitive_param, social_param, global_param, num_informants=4)
 
-        # Evaluate the performance of the optimized network on test data
-        predictions = network.predict(X_test)
-        accuracy = get_accuracy(y_test, predictions)
-        print("Accuracy on test data ", i ,":", accuracy) 
-        accuracyList.append(accuracy)
+#         # Evaluate the performance of the optimized network on test data
+#         predictions = network.predict(X_test)
+#         accuracy = get_accuracy(y_test, predictions)
+#         print("Accuracy on test data ", i ,":", accuracy) 
+#         accuracyList.append(accuracy)
     
-    print("Average accuracy: ", np.mean(accuracyList))
+#     print("Average accuracy: ", np.mean(accuracyList))
     
-    # plot the accuracy of each run
-    plt.plot(accuracyList)
+#     # plot the accuracy of each run
+#     plt.plot(accuracyList)
 
-def main_plot():
-    # test on iris dataset
-    iris = load_iris()
-    iris_X = iris.data
-    iris_y = iris.target
-    print(np.unique(iris_y)) # [0 1 2]
+# def main_MLP_Test():
+#     from sklearn.neural_network import MLPClassifier
 
-    X_train, X_test, y_train, y_test = train_test_split(iris_X, iris_y, test_size=0.3)
+#     # Load data and split into training and testing sets
+#     iris = load_iris()
+#     iris_X = iris.data
+#     iris_y = iris.target
+#     X_train, X_test, y_train, y_test = train_test_split(iris_X, iris_y, test_size=0.2)
 
-    # Create a neural network
-    network = NeuralNetwork(numHiddenLayers=1, numNeurons=[5], activation=['ReLU'])
-    network.fit(X_train, y_train)
+#     accuracyList = []
+#     # take an average of 10 runs
+#     for i in range(10):
+#         # Create a neural network
+#         clf = MLPClassifier(hidden_layer_sizes=(1, 14), activation='tanh', solver='sgd', learning_rate_init=0.01, max_iter=50)
+#         clf.fit(X_train, y_train)
+
+#         # Evaluate the performance of the optimized network on test data
+#         predictions = clf.predict(X_test)
+#         accuracy = get_accuracy(y_test, predictions)
+#         print("Accuracy on test data ",i,":", accuracy)
+#         accuracyList.append(accuracy)
     
-    pso = PSO(num_particles=30, max_iter=100, inertia=0.5, c1=1.0, c2=1.2, c3=2.0, num_informants=4)
-    pso.createParticles(network)
+#     print("Average accuracy: ", np.mean(accuracyList))
 
-    pso.optimize(network, showFitnessUpdate=True)
+# def visualizeCourseworkData():
+#     # visualize the data to see if its linearly separable
+#     import matplotlib.pyplot as plt
+#     data_csv = pd.read_csv('/Users/dhruv/Documents/Y4S1/F20BC/Coursework/data.csv')
+#     X = data_csv.iloc[:, :-1].to_numpy()
+#     y = data_csv.iloc[:, -1].to_numpy()
 
-def main_MLP_Test():
-    from sklearn.neural_network import MLPClassifier
+#     from sklearn.preprocessing import StandardScaler
+#     scaler = StandardScaler()
+#     X = scaler.fit_transform(X)
 
-    # Load data and split into training and testing sets
-    iris = load_iris()
-    iris_X = iris.data
-    iris_y = iris.target
-    X_train, X_test, y_train, y_test = train_test_split(iris_X, iris_y, test_size=0.2)
+#     #import PCA
+#     from sklearn.decomposition import PCA
+#     pca = PCA(n_components=2)
+#     X = pca.fit_transform(X)
 
-    accuracyList = []
-    # take an average of 10 runs
-    for i in range(10):
-        # Create a neural network
-        clf = MLPClassifier(hidden_layer_sizes=(1, 14), activation='tanh', solver='sgd', learning_rate_init=0.01, max_iter=50)
-        clf.fit(X_train, y_train)
+#     plt.scatter(X[:, 0], X[:, 1], c=y)
+#     plt.show()
 
-        # Evaluate the performance of the optimized network on test data
-        predictions = clf.predict(X_test)
-        accuracy = get_accuracy(y_test, predictions)
-        print("Accuracy on test data ",i,":", accuracy)
-        accuracyList.append(accuracy)
-    
-    print("Average accuracy: ", np.mean(accuracyList))
-
-def visualizeCourseworkData():
-    # visualize the data to see if its linearly separable
-    import matplotlib.pyplot as plt
-    data_csv = pd.read_csv('/Users/dhruv/Documents/Y4S1/F20BC/Coursework/data.csv')
-    X = data_csv.iloc[:, :-1].to_numpy()
-    y = data_csv.iloc[:, -1].to_numpy()
-
-    from sklearn.preprocessing import StandardScaler
-    scaler = StandardScaler()
-    X = scaler.fit_transform(X)
-
-    #import PCA
-    from sklearn.decomposition import PCA
-    pca = PCA(n_components=2)
-    X = pca.fit_transform(X)
-
-    plt.scatter(X[:, 0], X[:, 1], c=y)
-    plt.show()
-
-def visualizeIrisData():
+# def visualizeIrisData():
     # visualize the data to see if its linearly separable
     import matplotlib.pyplot as plt
     iris = load_iris()
@@ -597,7 +582,7 @@ def visualizeIrisData():
     plt.scatter(iris_X[:, 0], iris_X[:, 1], c=iris_y)
     plt.show()
 
-def coefficientTesting():
+def parameterTesting():
     # Load data and split into training and testing sets
     data_csv = pd.read_csv('data.csv')
     X = data_csv.iloc[:, :-1].to_numpy()
@@ -618,14 +603,14 @@ def coefficientTesting():
     swarm_sizes = [15, 25, 25, 25, 50]
     iterations = [75, 50, 25, 15, 15]
 
-    informants = [2, 6, 10]
+    informants = [2, 4, 5]
 
     num_runs = 10    # for how many runs should the average be taken
     
     # Create a dataframe that stores the accuracy of the network on the test data for each run
-    accuracy_df = pd.DataFrame(columns=range(num_runs), index=range(len(inertia_params)))
+    accuracy_df = pd.DataFrame(columns=range(num_runs), index=range(len(informants)))
     # Create a datafram that stores the runtime of the network for each run
-    runtime_df = pd.DataFrame(columns=range(num_runs), index=range(len(inertia_params)))
+    runtime_df = pd.DataFrame(columns=range(num_runs), index=range(len(informants)))
 
     for i in range(len(informants)):
         # optimal coefficients
@@ -704,8 +689,6 @@ def coefficientTesting():
     runtime_df.to_csv('Results/runtime.csv')
     print("\n")
     print(runtime_df)
-
-    
 
 def main():
     print("Which dataset do you want to use?")
@@ -818,11 +801,5 @@ def main():
     
 
 if __name__ == "__main__":
-    # visualizeCourseworkData()
-    # visualizeIrisData()
-    # main_ANN_Test()
-    # main_PSO_Test()
-    # main_plot()
-    # main_MLP_Test()
-    coefficientTesting()
-    # main()
+    # parameterTesting()
+    main()
