@@ -564,23 +564,23 @@ def randomizeNetwork(network):
 #     plt.show()
 
 # def visualizeIrisData():
-    # visualize the data to see if its linearly separable
-    import matplotlib.pyplot as plt
-    iris = load_iris()
-    iris_X = iris.data
-    iris_y = iris.target
+#     visualize the data to see if its linearly separable
+#     import matplotlib.pyplot as plt
+#     iris = load_iris()
+#     iris_X = iris.data
+#     iris_y = iris.target
 
-    from sklearn.preprocessing import StandardScaler
-    scaler = StandardScaler()
-    iris_X = scaler.fit_transform(iris_X)
+#     from sklearn.preprocessing import StandardScaler
+#     scaler = StandardScaler()
+#     iris_X = scaler.fit_transform(iris_X)
 
-    #import PCA
-    # from sklearn.decomposition import PCA
-    # pca = PCA(n_components=2)
-    # iris_X = pca.fit_transform(iris_X)
+#     #import PCA
+#     # from sklearn.decomposition import PCA
+#     # pca = PCA(n_components=2)
+#     # iris_X = pca.fit_transform(iris_X)
 
-    plt.scatter(iris_X[:, 0], iris_X[:, 1], c=iris_y)
-    plt.show()
+#     plt.scatter(iris_X[:, 0], iris_X[:, 1], c=iris_y)
+#     plt.show()
 
 def parameterTesting():
     # Load data and split into training and testing sets
