@@ -80,6 +80,13 @@ The Particle Swarm Optimization (PSO) algorithm effectively enhanced the perform
 
 Future work should focus on testing the PSO-ANN combination on more complex datasets to fully explore the algorithm's potential. Additionally, implementing adaptive parameters that adjust dynamically based on the algorithm's state, such as particle positions and velocities, could further improve performance and efficiency.
 
+## References
+[1] Effects of hidden layers on the efficiency of neural networks | IEEE ..., https://ieeexplore.ieee.org/document/9318195 (accessed Nov. 24, 2023). 
+[2] International Journal of Engineering Trends and Technology ..., http://www.ijettjournal.org/volume-3/issue-6/IJETT-V3I6P206.pdf (accessed Nov. 24, 2023). 
+[3] J. Garcia-Nieto and E. Alba, “Why Six informants is optimal in PSO,” Proceedings of the 14th annual conference on Genetic and evolutionary computation, 2012. doi:10.1145/2330163.2330168 
+
+
+
 
 
 
