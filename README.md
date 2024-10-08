@@ -1,6 +1,3 @@
-# F20BC_Coursework
-ANN implementation from scratch with PSO algorithm for ANN parameter optimization
-
 ## Implementation
 The ANN implementation consists of four classes: `Activation`, `Neuron`, `Layer`, and `Network`. The weights of each layer are initialized using He initialization, known for enhancing convergence in neural networks. The input and output layers are automatically generated based on the input data and class labels. By default, the output layer employs the logistic activation function, as the network is intended for classification tasks.
 
